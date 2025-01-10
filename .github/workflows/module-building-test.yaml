@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: multifranchise
+          ref: main
           fetch-depth: 0
 
       - name: Determine Modules to Build
