@@ -1,6 +1,8 @@
-name: 이벤트 트리거에서 옵션 리스트 에코 테스트
+name: 브랜드 별 개발 수동 배포
 
-# 앵커 정의
+# franchise list
+env:
+  FRANCHISE_LIST: '["kyochon", "eupcheonri"]'
 
 on:
   workflow_dispatch:
@@ -10,18 +12,9 @@ on:
         required: true
         type: choice
         options:
-          - all
           - kyochon
           - eupcheonri
-      tags:
-        description: 'Test scenario tags'
-        required: true
-        type: string
-      environment:
-        description: 'Environment to run tests against'
-        type: environment
-        required: true
-
+          - all
       deploy-user-api:
         type: boolean
         description: "user_api 배포 여부"
@@ -49,8 +42,10 @@ on:
         default: develop
         options:
           - develop
+
+# Allow one concurrent deployment
 concurrency:
-  group: "multifranchise"
+  group: "multifranchise-${{ github.event.inputs.env }}"
   cancel-in-progress: false
 
 jobs:
@@ -63,13 +58,65 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: multifranchise
+          fetch-depth: 0
 
       - name: Determine Modules to Build
         id: set-modules
         run: |
-          echo "Selected franchises: ${{ github.event.inputs.franchises }}"
-          echo "inputs franchises: ${{ inputs.franchises }}"
+          SELECTED_FRANCHISE=${{ github.event.inputs.franchises }}
+          echo "Selected Franchise: $SELECTED_FRANCHISE"
+
+
+          if [ "$SELECTED_FRANCHISE" == "all" ]; then
+            SELECTED_FRANCHISE=$FRANCHISE_LIST
+          else
+            SELECTED_FRANCHISE="[\"$SELECTED_FRANCHISE\"]"
+          fi
           
+          echo "Selected Franchise: $SELECTED_FRANCHISE"
+          
+          FRANCHISE_LIST=$(echo '${{ env.FRANCHISE_LIST }}' | jq -r '.[]')
+          
+          MODULES_TO_BUILD=""
+          echo "inputs franchises: ${{ inputs.franchises }}"
+          add_modules() {
+            local api_type=$1
+            local deploy_flag=$2
+          
+            if [ "$deploy_flag" == "true" ]; then
+              if [ "${{ github.event.inputs.franchises }}" = "all" ]; then
+                for franchise in $FRANCHISE_LIST; do
+                  MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_${api_type}"
+                done
+              else
+                MODULES_TO_BUILD="${MODULES_TO_BUILD} ${{ github.event.inputs.franchises }}_${api_type}"
+              fi
+            fi
+          }
+          
+          add_modules "user_api" "${{ github.event.inputs.deploy-user-api }}"
+          add_modules "admin_api" "${{ github.event.inputs.deploy-admin-api }}"
+          add_modules "external_api" "${{ github.event.inputs.deploy-external-api }}"
+          add_modules "batch" "${{ github.event.inputs.deploy-batch }}"
+
+          if [ -z "$MODULES_TO_BUILD" ]; then
+            echo "Error: No modules selected for deployment."
+            exit 1
+          fi
+
+          MODULES_TO_BUILD=$(echo "$MODULES_TO_BUILD" | tr -s ' ' | sed 's/^ //;s/ $//')
+          echo "Modules to build: $MODULES_TO_BUILD"
+
+          JSON_ARRAY=$(printf '%s\n' "$MODULES_TO_BUILD" | tr -s ' ' '\n' | jq -R . | jq -s . | jq -c .)
+          echo $JSON_ARRAY
+          
+          echo "json-array=$JSON_ARRAY" >> $GITHUB_OUTPUT
+          echo "modules-to-build=$MODULES_TO_BUILD" >> $GITHUB_OUTPUT
+          
+          echo "franchises=[\"${SELECTED_FRANCHISE}\"]" >> $GITHUB_OUTPUT
+          echo "franchises : [\"${SELECTED_FRANCHISE}\"]"
 
       - name: Version
         id: set-version
@@ -77,3 +124,47 @@ jobs:
           version=$(TZ="Asia/Seoul" date +"%y%m%d-%H%M")
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "$version"
+
+  build:
+    needs: [ "determine-modules" ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.determine-modules.outputs.json-array) }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build ${{ matrix.module }}
+        run: |
+          VERSION=${{ needs.determine-modules.outputs.version }}
+          echo "버전: $VERSION 모듈 빌드: ${{ matrix.module }}"
+          echo "./gradlew :${{ matrix.module }}:jib --quiet --parallel -Ptag=$VERSION -Pprofile=${{ github.event.inputs.env }} -Ppassword=`aws ecr get-login-password --region=ap-northeast-2`"
+
+  deploy:
+    needs: [ "determine-modules", "build" ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        franchise: ${{ fromJson(needs.determine-modules.outputs.franchises) }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy
+        id: deploy_step
+        run: |
+          MODULES=($(echo "${{ needs.determine-modules.outputs.modules-to-build }}" | tr ' ' '\n' | grep "^${{ matrix.franchise }}_"))
+          echo "Deploying modules for franchise: ${{ matrix.franchise }}"
+          echo "Filtered Modules: ${MODULES[*]}"
+          MODULE_COUNT=${#MODULES[@]}
+
+          for index in "${!MODULES[@]}"
+          do
+            MODULE=${MODULES[index]}
+            FRANCHISE_NAME=$(echo "${MODULE}" | cut -d'_' -f1)
+            VERSION="${FRANCHISE_NAME}_${{ needs.determine-modules.outputs.version }}"
+            echo "Franchise Name: ${FRANCHISE_NAME}"
+            echo "Version: $VERSION"
+            echo "Modules to build: ${{ needs.determine-modules.outputs.modules-to-build }}"
+            export VERSION=$VERSION;
