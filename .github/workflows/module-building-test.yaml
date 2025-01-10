@@ -57,7 +57,8 @@ jobs:
         id: set-modules
         run: |
           echo "Selected franchises: ${{ github.event.inputs.franchises }}"
-          echo "inputs franchises: ${{ inputs.franchises }}"
+          echo "inputs franchises: ${{ inputs.franchises.items }}"
+          
 
       - name: Version
         id: set-version
