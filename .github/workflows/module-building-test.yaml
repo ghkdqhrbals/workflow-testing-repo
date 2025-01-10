@@ -1,0 +1,67 @@
+name: 이벤트 트리거에서 옵션 리스트 에코 테스트
+
+on:
+  workflow_dispatch:
+    inputs:
+      franchises:
+        description: "배포할 프랜차이즈 선택"
+        required: true
+        type: choice
+        options:
+          - a
+          - b
+          - all
+      deploy-user-api:
+        type: boolean
+        description: "user_api 배포 여부"
+        required: false
+        default: false
+      deploy-admin-api:
+        type: boolean
+        description: "admin_api 배포 여부"
+        required: false
+        default: false
+      deploy-external-api:
+        type: boolean
+        description: "external_api 배포 여부"
+        required: false
+        default: false
+      deploy-batch:
+        type: boolean
+        description: "batch 배포 여부"
+        required: false
+        default: false
+      env:
+        description: "배포 환경 선택"
+        required: true
+        type: choice
+        default: develop
+        options:
+          - develop
+concurrency:
+  group: "multifranchise"
+  cancel-in-progress: false
+
+jobs:
+  determine-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules-to-build: ${{ steps.set-modules.outputs.modules-to-build }}
+      franchises: ${{ steps.set-modules.outputs.franchises }}
+      json-array: ${{ steps.set-modules.outputs.json-array }}
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Determine Modules to Build
+        id: set-modules
+        run: |
+          echo "Selected franchises: ${{ github.event.inputs.franchises }}"
+          echo "inputs franchises: ${{ inputs.franchises }}"
+
+      - name: Version
+        id: set-version
+        run: |
+          version=$(TZ="Asia/Seoul" date +"%y%m%d-%H%M")
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "$version"
