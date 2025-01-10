@@ -1,15 +1,6 @@
 name: 이벤트 트리거에서 옵션 리스트 에코 테스트
 
 # 앵커 정의
-x-franchise-list: &franchise-list
-  - all
-  - kyochon
-  - bhc
-  - goobne
-
-env:
-  # 앵커를 사용하여 env 변수 설정
-  FRANCHISE_LIST: *franchise-list
 
 on:
   workflow_dispatch:
@@ -18,7 +9,19 @@ on:
         description: "배포할 프랜차이즈 선택"
         required: true
         type: choice
-        options: *franchise-list
+        options:
+          - all
+          - kyochon
+          - eupcheonri
+      tags:
+        description: 'Test scenario tags'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to run tests against'
+        type: environment
+        required: true
+
       deploy-user-api:
         type: boolean
         description: "user_api 배포 여부"
@@ -65,9 +68,7 @@ jobs:
         id: set-modules
         run: |
           echo "Selected franchises: ${{ github.event.inputs.franchises }}"
-          FRANCHISE_ARRAY=($(echo '${{ toJson(env.FRANCHISE_LIST) }}' | jq -r '.[]'))
-          
-          echo "Available franchises: $FRANCHISE_ARRAY"
+          echo "inputs franchises: ${{ inputs.franchises }}"
           
 
       - name: Version
