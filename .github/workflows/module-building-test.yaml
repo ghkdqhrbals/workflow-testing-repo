@@ -115,7 +115,7 @@ jobs:
           echo "json-array=$JSON_ARRAY" >> $GITHUB_OUTPUT
           echo "modules-to-build=$MODULES_TO_BUILD" >> $GITHUB_OUTPUT
           
-          echo "franchises=${SELECTED_FRANCHISE} >> $GITHUB_OUTPUT
+          echo "franchises=${SELECTED_FRANCHISE}" >> $GITHUB_OUTPUT
           echo "franchises : ${SELECTED_FRANCHISE}"
           echo "json-array : $JSON_ARRAY"
 
