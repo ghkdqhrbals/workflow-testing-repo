@@ -43,6 +43,11 @@ on:
         options:
           - develop
 
+
+defaults:
+  run:
+    ref: main # 브랜치를 multifranchise로 고정
+    
 # Allow one concurrent deployment
 concurrency:
   group: "multifranchise-${{ github.event.inputs.env }}"
@@ -70,9 +75,9 @@ jobs:
       
           # 선택된 프랜차이즈가 'all'일 경우 전체 리스트 사용
           if [ "$SELECTED_FRANCHISE" == "all" ]; then
-          SELECTED_FRANCHISE=$FRANCHISE_LIST
+            SELECTED_FRANCHISE=$FRANCHISE_LIST
           else
-          SELECTED_FRANCHISE=$(jq -nc --arg franchise "$SELECTED_FRANCHISE" '[$franchise]')
+            SELECTED_FRANCHISE=$(jq -nc --arg franchise "$SELECTED_FRANCHISE" '[$franchise]')
           fi
       
           echo "Selected Franchise(s): $SELECTED_FRANCHISE"
@@ -83,16 +88,16 @@ jobs:
           echo "Processing franchise: $franchise"
           
           if [ "${{ github.event.inputs.deploy-user-api }}" == "true" ]; then
-          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_user_api"
+            MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_user_api"
           fi
           if [ "${{ github.event.inputs.deploy-admin-api }}" == "true" ]; then
-          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_admin_api"
+            MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_admin_api"
           fi
           if [ "${{ github.event.inputs.deploy-external-api }}" == "true" ]; then
-          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_external_api"
+            MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_external_api"
           fi
           if [ "${{ github.event.inputs.deploy-batch }}" == "true" ]; then
-          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_batch"
+            MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_batch"
           fi
           done
 
