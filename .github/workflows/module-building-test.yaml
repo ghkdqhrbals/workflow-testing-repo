@@ -65,59 +65,44 @@ jobs:
       - name: Determine Modules to Build
         id: set-modules
         run: |
+          FRANCHISE_LIST=$(echo '${{ env.FRANCHISE_LIST }}' | jq -c .)
           SELECTED_FRANCHISE=${{ github.event.inputs.franchises }}
-          echo "Selected Franchise: $SELECTED_FRANCHISE"
-
-
+      
+          # 선택된 프랜차이즈가 'all'일 경우 전체 리스트 사용
           if [ "$SELECTED_FRANCHISE" == "all" ]; then
-            SELECTED_FRANCHISE=$FRANCHISE_LIST
+          SELECTED_FRANCHISE=$FRANCHISE_LIST
           else
-            SELECTED_FRANCHISE="[\"$SELECTED_FRANCHISE\"]"
+          SELECTED_FRANCHISE=$(jq -nc --arg franchise "$SELECTED_FRANCHISE" '[$franchise]')
           fi
-          
-          echo "Selected Franchise: $SELECTED_FRANCHISE"
-          
-          FRANCHISE_LIST=$(echo '${{ env.FRANCHISE_LIST }}' | jq -r '.[]')
-          
+      
+          echo "Selected Franchise(s): $SELECTED_FRANCHISE"
+      
           MODULES_TO_BUILD=""
-          echo "inputs franchises: ${{ inputs.franchises }}"
-          add_modules() {
-            local api_type=$1
-            local deploy_flag=$2
+          # 선택된 프랜차이즈에 대해 반복
+          for franchise in $(echo "$SELECTED_FRANCHISE" | jq -r '.[]'); do
+          echo "Processing franchise: $franchise"
           
-            if [ "$deploy_flag" == "true" ]; then
-              if [ "${{ github.event.inputs.franchises }}" = "all" ]; then
-                for franchise in $FRANCHISE_LIST; do
-                  MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_${api_type}"
-                done
-              else
-                MODULES_TO_BUILD="${MODULES_TO_BUILD} ${{ github.event.inputs.franchises }}_${api_type}"
-              fi
-            fi
-          }
-          
-          add_modules "user_api" "${{ github.event.inputs.deploy-user-api }}"
-          add_modules "admin_api" "${{ github.event.inputs.deploy-admin-api }}"
-          add_modules "external_api" "${{ github.event.inputs.deploy-external-api }}"
-          add_modules "batch" "${{ github.event.inputs.deploy-batch }}"
-
-          if [ -z "$MODULES_TO_BUILD" ]; then
-            echo "Error: No modules selected for deployment."
-            exit 1
+          if [ "${{ github.event.inputs.deploy-user-api }}" == "true" ]; then
+          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_user_api"
           fi
+          if [ "${{ github.event.inputs.deploy-admin-api }}" == "true" ]; then
+          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_admin_api"
+          fi
+          if [ "${{ github.event.inputs.deploy-external-api }}" == "true" ]; then
+          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_external_api"
+          fi
+          if [ "${{ github.event.inputs.deploy-batch }}" == "true" ]; then
+          MODULES_TO_BUILD="${MODULES_TO_BUILD} ${franchise}_batch"
+          fi
+          done
 
           MODULES_TO_BUILD=$(echo "$MODULES_TO_BUILD" | tr -s ' ' | sed 's/^ //;s/ $//')
           echo "Modules to build: $MODULES_TO_BUILD"
-
+      
           JSON_ARRAY=$(printf '%s\n' "$MODULES_TO_BUILD" | tr -s ' ' '\n' | jq -R . | jq -s . | jq -c .)
-          echo $JSON_ARRAY
-          
           echo "json-array=$JSON_ARRAY" >> $GITHUB_OUTPUT
           echo "modules-to-build=$MODULES_TO_BUILD" >> $GITHUB_OUTPUT
-          
-          echo "franchises=${SELECTED_FRANCHISE}" >> $GITHUB_OUTPUT
-          echo "franchises : ${SELECTED_FRANCHISE}"
-          echo "json-array : $JSON_ARRAY"
+          echo "franchises=$SELECTED_FRANCHISE" >> $GITHUB_OUTPUT
 
       - name: Version
         id: set-version
