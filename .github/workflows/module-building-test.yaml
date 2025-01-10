@@ -152,6 +152,6 @@ jobs:
             VERSION="${FRANCHISE_NAME}_${{ needs.determine-modules.outputs.version }}"
             echo "Franchise Name: ${FRANCHISE_NAME}"
             echo "Version: $VERSION"
-            echo "Modules to build: ${{ needs.determine-modules.outputs.modules-to-build }}"
+            echo "Modules to build: $MODULE"
             export VERSION=$VERSION;
           done
