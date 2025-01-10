@@ -2,7 +2,7 @@ name: 브랜드 별 개발 수동 배포
 
 # franchise list
 env:
-  FRANCHISE_LIST: '["kyochon", "eupcheonri"]'
+  FRANCHISE_LIST: '["kyochon","eupcheonri"]'
 
 on:
   workflow_dispatch:
@@ -169,3 +169,4 @@ jobs:
             echo "Version: $VERSION"
             echo "Modules to build: ${{ needs.determine-modules.outputs.modules-to-build }}"
             export VERSION=$VERSION;
+          done
