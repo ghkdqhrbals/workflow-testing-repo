@@ -43,10 +43,6 @@ on:
         options:
           - develop
 
-
-defaults:
-  run:
-    ref: main # 브랜치를 multifranchise로 고정
     
 # Allow one concurrent deployment
 concurrency:
