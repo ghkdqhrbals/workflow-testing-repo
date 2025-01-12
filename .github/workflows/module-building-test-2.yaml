@@ -5,45 +5,9 @@ env:
   FRANCHISE_LIST: '["kyochon","eupcheonri"]'
 
 on:
-  workflow_dispatch:
-    inputs:
-      franchises:
-        description: "배포할 프랜차이즈 선택"
-        required: true
-        type: choice
-        options:
-          - kyochon
-          - eupcheonri
-          - all
-      deploy-user-api:
-        type: boolean
-        description: "user_api 배포 여부"
-        required: false
-        default: false
-      deploy-admin-api:
-        type: boolean
-        description: "admin_api 배포 여부"
-        required: false
-        default: false
-      deploy-external-api:
-        type: boolean
-        description: "external_api 배포 여부"
-        required: false
-        default: false
-      deploy-batch:
-        type: boolean
-        description: "batch 배포 여부"
-        required: false
-        default: false
-      env:
-        description: "배포 환경 선택"
-        required: true
-        type: choice
-        default: develop
-        options:
-          - develop
+  push: main
 
-    
+
 # Allow one concurrent deployment
 concurrency:
   group: "multifranchise-${{ github.event.inputs.env }}"
