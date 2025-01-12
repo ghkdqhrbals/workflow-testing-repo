@@ -66,7 +66,7 @@ jobs:
       - name: Send GitHub Action trigger data to Slack workflow
         uses: ghkdqhrbals/slack-list@v1.0.3
         with:
-          SLACK_WEBHOOK_URL: 'https://hooks.slack.com/services/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'
+          slack-webhook-url: 'https://hooks.slack.com/services/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'
           actor: ${{ github.actor }}
           messages: '["test1", "test2", "test3"]'
           message-title: 'Testing Slack Notification Header'
