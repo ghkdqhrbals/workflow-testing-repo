@@ -34,7 +34,7 @@ jobs:
           ls -la /github/workspace
 
       - name: Send GitHub Action trigger data to Slack workflow
-        uses: ghkdqhrbals/slack-list@v1.0.6
+        uses: ghkdqhrbals/slack-list@v1.0.7
         with:
           slack-webhook-url: 'https://hooks.slack.com/services/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'
           actor: ${{ github.actor }}
