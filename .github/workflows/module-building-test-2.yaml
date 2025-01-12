@@ -33,7 +33,7 @@ jobs:
           echo "NEXT"
 
       - name: Send GitHub Action trigger data to Slack workflow
-        uses: ghkdqhrbals/slack-list@v1.0.7
+        uses: ghkdqhrbals/slack-list@v1.0.8
         with:
           slack-webhook-url: 'https://hooks.slack.com/services/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'
           actor: ${{ github.actor }}
