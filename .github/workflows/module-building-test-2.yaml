@@ -1,0 +1,77 @@
+name: 테스트용 배포
+
+# franchise list
+env:
+  FRANCHISE_LIST: '["kyochon","eupcheonri"]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      franchises:
+        description: "배포할 프랜차이즈 선택"
+        required: true
+        type: choice
+        options:
+          - kyochon
+          - eupcheonri
+          - all
+      deploy-user-api:
+        type: boolean
+        description: "user_api 배포 여부"
+        required: false
+        default: false
+      deploy-admin-api:
+        type: boolean
+        description: "admin_api 배포 여부"
+        required: false
+        default: false
+      deploy-external-api:
+        type: boolean
+        description: "external_api 배포 여부"
+        required: false
+        default: false
+      deploy-batch:
+        type: boolean
+        description: "batch 배포 여부"
+        required: false
+        default: false
+      env:
+        description: "배포 환경 선택"
+        required: true
+        type: choice
+        default: develop
+        options:
+          - develop
+
+
+defaults:
+  run:
+    ref: main # 브랜치를 multifranchise로 고정
+    
+# Allow one concurrent deployment
+concurrency:
+  group: "multifranchise-${{ github.event.inputs.env }}"
+  cancel-in-progress: false
+
+jobs:
+  determine-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules-to-build: ${{ steps.set-modules.outputs.modules-to-build }}
+      franchises: ${{ steps.set-modules.outputs.franchises }}
+      json-array: ${{ steps.set-modules.outputs.json-array }}
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Send GitHub Action trigger data to Slack workflow
+        uses: ghkdqhrbals/slack-list@v1.0.3
+        with:
+          SLACK_WEBHOOK_URL: 'https://hooks.slack.com/services/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'
+          actor: ${{ github.actor }}
+          messages: '["test1", "test2", "test3"]'
+          message-title: 'Testing Slack Notification Header'
+          color: '#3bb143'
