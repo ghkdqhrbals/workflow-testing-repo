@@ -5,7 +5,9 @@ env:
   FRANCHISE_LIST: '["kyochon","eupcheonri"]'
 
 on:
-  push: main
+  push:
+    branches:
+      - main
 
 
 # Allow one concurrent deployment
